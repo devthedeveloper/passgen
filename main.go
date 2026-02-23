@@ -182,11 +182,12 @@ type SegmentConfig struct {
 }
 
 type PassphraseConfig struct {
-	Words      int
-	Separator  string
-	Capitalize bool
-	AddNumber  bool
-	Include    []string // user's own words to mix in
+	Words        int
+	Separator    string
+	Capitalize   bool
+	AddNumber    bool
+	Include      []string // user's own words to mix in
+	ShuffleChars bool     // scramble letters within each word
 }
 
 // ── Generators ────────────────────────────────────────────────────────────────
@@ -278,35 +279,38 @@ func generateSegmented(cfg SegmentConfig) (string, error) {
 }
 
 func generatePassphrase(cfg PassphraseConfig) (string, error) {
-	// Start with user's included words
+	// Start with user's included words (preserve order)
 	words := make([]string, 0, cfg.Words)
 	for _, w := range cfg.Include {
 		w = strings.TrimSpace(w)
 		if w == "" {
 			continue
 		}
-		if cfg.Capitalize {
-			w = strings.ToUpper(w[:1]) + w[1:]
-		}
 		words = append(words, w)
 	}
 
-	// Fill remaining slots with random words
+	// Fill remaining slots with random words (appended after user words)
 	for len(words) < cfg.Words {
 		idx, err := randInt(len(wordList))
 		if err != nil {
 			return "", err
 		}
-		w := wordList[idx]
-		if cfg.Capitalize {
-			w = strings.ToUpper(w[:1]) + w[1:]
-		}
-		words = append(words, w)
+		words = append(words, wordList[idx])
 	}
 
-	// Shuffle so user words aren't always at the start
-	if err := shuffleStrings(words); err != nil {
-		return "", err
+	// Apply capitalize and optional char shuffle
+	for i, w := range words {
+		if cfg.ShuffleChars {
+			b := []byte(w)
+			if err := shuffleBytes(b); err != nil {
+				return "", err
+			}
+			w = string(b)
+		}
+		if cfg.Capitalize && len(w) > 0 {
+			w = strings.ToUpper(w[:1]) + strings.ToLower(w[1:])
+		}
+		words[i] = w
 	}
 
 	passphrase := strings.Join(words, cfg.Separator)
@@ -333,17 +337,6 @@ func splitWords(raw string) []string {
 		}
 	}
 	return words
-}
-
-func shuffleStrings(s []string) error {
-	for i := len(s) - 1; i > 0; i-- {
-		j, err := randInt(i + 1)
-		if err != nil {
-			return err
-		}
-		s[i], s[j] = s[j], s[i]
-	}
-	return nil
 }
 
 // ── Clipboard ─────────────────────────────────────────────────────────────────
@@ -524,24 +517,26 @@ func runInteractive() {
 			include = splitWords(includeRaw)
 		}
 		defWords := 4
-		if len(include) > defWords {
-			defWords = len(include) + 1
+		if len(include) > 0 {
+			defWords = len(include) // default to exactly their words, no extras
 		}
-		numWords   := askInt("  Total number of words", defWords)
+		numWords := askInt("  Total number of words", defWords)
 		if numWords < len(include) {
 			numWords = len(include)
 		}
-		separator  := askChoice("  Separator  (- or _)", []string{"-", "_"}, "-")
-		capitalize := askYesNo("  Capitalize each word", true)
-		addNumber  := askYesNo("  Add a random number at end", true)
+		separator    := askChoice("  Separator  (- or _)", []string{"-", "_"}, "-")
+		capitalize   := askYesNo("  Capitalize each word", true)
+		shuffleChars := askYesNo("  Shuffle characters within each word", false)
+		addNumber    := askYesNo("  Add a random number at end", true)
 		fmt.Println()
 
 		cfg := PassphraseConfig{
-			Words:      numWords,
-			Separator:  separator,
-			Capitalize: capitalize,
-			AddNumber:  addNumber,
-			Include:    include,
+			Words:        numWords,
+			Separator:    separator,
+			Capitalize:   capitalize,
+			AddNumber:    addNumber,
+			Include:      include,
+			ShuffleChars: shuffleChars,
 		}
 		for i := 0; i < count; i++ {
 			p, err := generatePassphrase(cfg)
@@ -633,7 +628,8 @@ func main() {
 	words     := fs.Int("words",        4,        "Number of words (phrase mode)")
 	capitalize := fs.Bool("capitalize", true,     "Capitalize words (phrase mode)")
 	addNum    := fs.Bool("add-number",  true,     "Add random number at end (phrase mode)")
-	include   := fs.String("include",   "",       "Your words to mix in, comma separated (phrase mode)")
+	include      := fs.String("include",       "",    "Your words to mix in, comma/space separated (phrase mode)")
+	shuffleChars := fs.Bool("shuffle-chars", false,  "Shuffle characters within each word (phrase mode)")
 
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "passgen — Cryptographically secure password generator")
@@ -726,12 +722,17 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error: -words must be >= 1")
 			os.Exit(1)
 		}
+		// If user provides words but didn't change -words, default to their count
+		if len(inc) > 0 && *words == 4 {
+			*words = len(inc)
+		}
 		cfg := PassphraseConfig{
-			Words:      *words,
-			Separator:  *separator,
-			Capitalize: *capitalize,
-			AddNumber:  *addNum,
-			Include:    inc,
+			Words:        *words,
+			Separator:    *separator,
+			Capitalize:   *capitalize,
+			AddNumber:    *addNum,
+			Include:      inc,
+			ShuffleChars: *shuffleChars,
 		}
 		for i := 0; i < *count; i++ {
 			p, err := generatePassphrase(cfg)
