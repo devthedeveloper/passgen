@@ -717,6 +717,11 @@
       <p class="feature-desc">Generate readable patterns like <code>ab12-cd34-ef56</code>. Configure number of segments, chars per segment, and separator.</p>
     </div>
     <div class="feature-card">
+      <span class="feature-icon">🧠</span>
+      <div class="feature-title">Passphrases</div>
+      <p class="feature-desc">Easy to remember, hard to crack. Generates <code>Tiger-Maple-Cloud-97</code> style passwords from 800+ words using <code>crypto/rand</code>.</p>
+    </div>
+    <div class="feature-card">
       <span class="feature-icon">📋</span>
       <div class="feature-title">Auto clipboard</div>
       <p class="feature-desc">Every generated password is instantly copied to your clipboard. Supports pbcopy, xclip, xsel, wl-copy, and clip.</p>
@@ -751,6 +756,7 @@
 <span class="c-out">Password type:</span>
 <span class="c-out">  1  Random</span>
 <span class="c-out">  2  Segmented</span>
+<span class="c-out">  3  Passphrase</span>
 <span class="c-out">Choose type [1]:</span> <span class="c-value">_</span>
 <span class="c-out">How many passwords [1]:</span> <span class="c-value">_</span></pre>
     </div>
@@ -770,6 +776,16 @@
 <span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">segment</span> <span class="c-flag">-segments</span> <span class="c-value">4</span>
 <span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">segment</span> <span class="c-flag">-seg-length</span> <span class="c-value">6</span>
 <span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">segment</span> <span class="c-flag">-separator</span> <span class="c-value">_</span></pre>
+    </div>
+
+    <div class="code-card">
+      <div class="code-card-label">Passphrases (easy to remember)</div>
+      <pre><span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span>
+<span class="c-out">Tiger-Maple-Cloud-Sage-97</span>
+
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span> <span class="c-flag">-words</span> <span class="c-value">5</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span> <span class="c-flag">-separator</span> <span class="c-value">_</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span> <span class="c-flag">-capitalize=false</span></pre>
     </div>
   </div>
 </section>

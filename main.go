@@ -42,6 +42,124 @@ func filterChars(s, exclude string) string {
 	return sb.String()
 }
 
+// ── Word list (EFF short list style — common, easy-to-remember words) ────────
+
+var wordList = []string{
+	"acid", "acme", "aged", "also", "arch", "area", "army", "away",
+	"back", "bail", "bake", "ball", "band", "bank", "barn", "base",
+	"bath", "bead", "beam", "bear", "beat", "been", "bell", "belt",
+	"bend", "best", "bike", "bird", "bite", "blow", "blue", "blur",
+	"boat", "body", "bold", "bolt", "bomb", "bond", "bone", "book",
+	"boot", "born", "boss", "bowl", "bulk", "bump", "burn", "busy",
+	"cafe", "cage", "cake", "calm", "came", "camp", "cape", "card",
+	"care", "cart", "cash", "cast", "cave", "chat", "chef", "chin",
+	"chip", "chop", "cite", "city", "clad", "clam", "clan", "clap",
+	"clay", "clip", "club", "clue", "coal", "coat", "code", "coil",
+	"coin", "cold", "colt", "comb", "come", "cook", "cool", "cope",
+	"copy", "cord", "core", "corn", "cost", "cozy", "crew", "crop",
+	"crow", "cube", "cult", "cure", "curl", "cute", "dare", "dark",
+	"dart", "dash", "data", "dawn", "deal", "dean", "dear", "debt",
+	"deck", "deed", "deem", "deep", "deer", "demo", "deny", "desk",
+	"dial", "dice", "diet", "dime", "dine", "dirt", "disc", "dish",
+	"dock", "does", "dome", "done", "doom", "door", "dose", "dove",
+	"down", "drag", "draw", "drip", "drop", "drum", "dual", "duck",
+	"duel", "duke", "dull", "dumb", "dump", "dune", "dusk", "dust",
+	"duty", "each", "earl", "earn", "ease", "east", "easy", "echo",
+	"edge", "edit", "else", "emit", "ends", "epic", "euro", "even",
+	"ever", "evil", "exam", "exec", "exit", "expo", "face", "fact",
+	"fade", "fail", "fair", "fake", "fall", "fame", "fang", "fare",
+	"farm", "fast", "fate", "fawn", "fear", "feat", "feed", "feel",
+	"fell", "felt", "file", "fill", "film", "find", "fine", "fire",
+	"firm", "fish", "fist", "flag", "flat", "flaw", "fled", "flew",
+	"flex", "flip", "flow", "foam", "foil", "fold", "folk", "fond",
+	"font", "food", "fool", "foot", "ford", "fork", "form", "fort",
+	"foul", "four", "fowl", "free", "frog", "from", "fuel", "full",
+	"fund", "funk", "fury", "fuse", "gain", "gale", "game", "gang",
+	"gape", "garb", "gate", "gave", "gaze", "gear", "gene", "gift",
+	"gild", "glad", "glow", "glue", "goat", "goes", "gold", "golf",
+	"gone", "good", "grab", "gray", "grew", "grid", "grim", "grin",
+	"grip", "grow", "gust", "guts", "hack", "hail", "hair", "hale",
+	"half", "hall", "halt", "hand", "hang", "hard", "hare", "harm",
+	"harp", "hash", "hate", "haul", "have", "hawk", "haze", "head",
+	"heal", "heap", "hear", "heat", "heed", "heel", "held", "helm",
+	"help", "herb", "herd", "here", "hero", "hike", "hill", "hilt",
+	"hint", "hire", "hold", "hole", "holy", "home", "hood", "hook",
+	"hope", "horn", "host", "hour", "howl", "huge", "hull", "hung",
+	"hunt", "hurt", "hush", "hymn", "icon", "idea", "inch", "info",
+	"into", "iron", "isle", "item", "jack", "jade", "jail", "jamb",
+	"jaws", "jazz", "jean", "jerk", "jest", "jets", "jobs", "join",
+	"joke", "jolt", "jump", "june", "jury", "just", "keen", "keep",
+	"kelp", "kept", "kick", "kids", "kill", "kind", "king", "kiss",
+	"kite", "knee", "knew", "knit", "knob", "knot", "know", "lace",
+	"lack", "laid", "lake", "lamb", "lamp", "land", "lane", "lard",
+	"lark", "lash", "last", "late", "lawn", "lead", "leaf", "leak",
+	"lean", "leap", "left", "lend", "lens", "lent", "less", "levy",
+	"liar", "lick", "lied", "life", "lift", "like", "limb", "lime",
+	"limp", "line", "link", "lint", "lion", "lips", "list", "live",
+	"load", "loaf", "loan", "lock", "loft", "logo", "lone", "long",
+	"look", "loop", "lord", "lore", "lose", "loss", "lost", "love",
+	"luck", "lump", "lung", "lure", "lurk", "lush", "made", "maid",
+	"mail", "main", "make", "male", "malt", "mane", "many", "maps",
+	"mare", "mark", "mars", "mash", "mask", "mass", "mast", "mate",
+	"maze", "meal", "mean", "meat", "meld", "melt", "memo", "mend",
+	"menu", "mere", "mesa", "mesh", "mild", "mile", "milk", "mill",
+	"mime", "mind", "mine", "mint", "miss", "mist", "moan", "moat",
+	"mock", "mode", "mold", "mole", "monk", "mood", "moon", "more",
+	"moss", "most", "moth", "move", "much", "mule", "murk", "muse",
+	"musk", "must", "myth", "nail", "name", "navy", "near", "neat",
+	"neck", "need", "nest", "news", "next", "nice", "nine", "node",
+	"none", "noon", "norm", "nose", "note", "noun", "null", "numb",
+	"oath", "obey", "odds", "omit", "once", "only", "onto", "opal",
+	"open", "oral", "orca", "oven", "over", "owed", "owls", "owns",
+	"pace", "pack", "page", "paid", "pail", "pain", "pair", "pale",
+	"palm", "pane", "park", "part", "pass", "past", "path", "pave",
+	"peak", "pear", "peel", "perk", "pest", "pick", "pier", "pike",
+	"pile", "pine", "pink", "pipe", "plan", "play", "plea", "plow",
+	"plug", "plum", "plus", "poke", "pole", "poll", "polo", "pond",
+	"pool", "poor", "pope", "pork", "port", "pose", "post", "pour",
+	"pray", "prey", "prop", "pull", "pulp", "pump", "punk", "pure",
+	"push", "quit", "quiz", "race", "rack", "raft", "rage", "raid",
+	"rail", "rain", "rake", "ramp", "rang", "rank", "rare", "rash",
+	"rate", "rave", "rays", "read", "real", "reap", "rear", "reed",
+	"reef", "rein", "rely", "rent", "rest", "rice", "rich", "ride",
+	"rift", "rims", "ring", "riot", "rise", "risk", "road", "roam",
+	"robe", "rock", "rode", "role", "roll", "roof", "room", "root",
+	"rope", "rose", "ruin", "rule", "rush", "rust", "sack", "safe",
+	"sage", "said", "sail", "sake", "sale", "salt", "same", "sand",
+	"sane", "sang", "sank", "save", "seal", "seam", "seed", "seek",
+	"seen", "self", "sell", "semi", "send", "sent", "shed", "shin",
+	"ship", "shop", "shot", "show", "shut", "sick", "side", "sift",
+	"sign", "silk", "sink", "site", "size", "skin", "skip", "slab",
+	"slam", "slap", "sled", "slew", "slid", "slim", "slip", "slot",
+	"slow", "slug", "snap", "snow", "soak", "soap", "soar", "sock",
+	"soft", "soil", "sold", "sole", "some", "song", "soon", "sore",
+	"sort", "soul", "sour", "span", "spar", "spec", "sped", "spin",
+	"spit", "spot", "spur", "star", "stay", "stem", "step", "stew",
+	"stop", "stow", "stub", "such", "suit", "sulk", "sung", "sunk",
+	"sure", "surf", "swan", "swap", "swim", "tabs", "tack", "tact",
+	"tail", "take", "tale", "talk", "tall", "tame", "tank", "tape",
+	"task", "taxi", "team", "tear", "tell", "tend", "tent", "term",
+	"test", "text", "than", "them", "then", "they", "thin", "this",
+	"tick", "tide", "tidy", "tied", "tier", "tile", "till", "tilt",
+	"time", "tiny", "tire", "toad", "toga", "toil", "told", "toll",
+	"tomb", "tone", "took", "tool", "tops", "tore", "torn", "toss",
+	"tour", "town", "trap", "tray", "tree", "trek", "trim", "trio",
+	"trip", "trot", "true", "tube", "tuck", "tuft", "tuna", "tune",
+	"turn", "twin", "type", "ugly", "undo", "unit", "unto", "upon",
+	"urge", "used", "user", "vale", "vane", "vary", "vast", "veil",
+	"vein", "vent", "verb", "vest", "veto", "vial", "vice", "view",
+	"vine", "visa", "void", "volt", "vote", "wade", "wage", "wait",
+	"wake", "walk", "wall", "wand", "want", "ward", "warm", "warn",
+	"warp", "wary", "wash", "vast", "wave", "wavy", "waxy", "ways",
+	"weak", "wear", "weed", "week", "weep", "weld", "well", "went",
+	"were", "west", "what", "when", "whom", "wick", "wide", "wife",
+	"wild", "will", "wilt", "wily", "wind", "wine", "wing", "wink",
+	"wipe", "wire", "wise", "wish", "wisp", "with", "woke", "wolf",
+	"wood", "wool", "word", "wore", "work", "worm", "worn", "wrap",
+	"wren", "yank", "yard", "yarn", "year", "yell", "yoga", "yoke",
+	"your", "zeal", "zero", "zinc", "zone", "zoom",
+}
+
 // ── Configs ───────────────────────────────────────────────────────────────────
 
 type RandomConfig struct {
@@ -61,6 +179,13 @@ type SegmentConfig struct {
 	NoLower   bool
 	NoDigits  bool
 	Exclude   string
+}
+
+type PassphraseConfig struct {
+	Words     int
+	Separator string
+	Capitalize bool
+	AddNumber  bool
 }
 
 // ── Generators ────────────────────────────────────────────────────────────────
@@ -149,6 +274,33 @@ func generateSegmented(cfg SegmentConfig) (string, error) {
 		parts[i] = string(seg)
 	}
 	return strings.Join(parts, cfg.Separator), nil
+}
+
+func generatePassphrase(cfg PassphraseConfig) (string, error) {
+	words := make([]string, cfg.Words)
+	for i := range words {
+		idx, err := randInt(len(wordList))
+		if err != nil {
+			return "", err
+		}
+		w := wordList[idx]
+		if cfg.Capitalize {
+			w = strings.ToUpper(w[:1]) + w[1:]
+		}
+		words[i] = w
+	}
+
+	passphrase := strings.Join(words, cfg.Separator)
+
+	if cfg.AddNumber {
+		n, err := randInt(1000)
+		if err != nil {
+			return "", err
+		}
+		passphrase += cfg.Separator + strconv.Itoa(n)
+	}
+
+	return passphrase, nil
 }
 
 // ── Clipboard ─────────────────────────────────────────────────────────────────
@@ -242,10 +394,11 @@ func runInteractive() {
 
 	// ── Type ──
 	fmt.Println("  Password type:")
-	fmt.Println("    1  Random    e.g. X7&kP2!qL9mR@wZ")
-	fmt.Println("    2  Segmented e.g. ab12-cd34-ef56")
+	fmt.Println("    1  Random     e.g. X7&kP2!qL9mR@wZ")
+	fmt.Println("    2  Segmented  e.g. ab12-cd34-ef56")
+	fmt.Println("    3  Passphrase e.g. Tiger-Maple-Cloud-97")
 	fmt.Println()
-	typeChoice := askChoice("  Choose type", []string{"1", "2"}, "1")
+	typeChoice := askChoice("  Choose type", []string{"1", "2", "3"}, "1")
 	fmt.Println()
 
 	count := askInt("  How many passwords to generate", 1)
@@ -310,6 +463,32 @@ func runInteractive() {
 		}
 		for i := 0; i < count; i++ {
 			p, err := generateSegmented(cfg)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "  error: %v\n", err)
+				os.Exit(1)
+			}
+			passwords = append(passwords, p)
+		}
+
+	case "3":
+		// ── Passphrase ──
+		printDivider()
+		fmt.Println("  Passphrase options")
+		printDivider()
+		numWords   := askInt("  Number of words", 4)
+		separator  := askChoice("  Separator  (- or _)", []string{"-", "_"}, "-")
+		capitalize := askYesNo("  Capitalize each word", true)
+		addNumber  := askYesNo("  Add a random number at end", true)
+		fmt.Println()
+
+		cfg := PassphraseConfig{
+			Words:      numWords,
+			Separator:  separator,
+			Capitalize: capitalize,
+			AddNumber:  addNumber,
+		}
+		for i := 0; i < count; i++ {
+			p, err := generatePassphrase(cfg)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "  error: %v\n", err)
 				os.Exit(1)
@@ -383,7 +562,7 @@ func main() {
 
 	fs := flag.NewFlagSet("passgen", flag.ExitOnError)
 
-	mode      := fs.String("type",      "random", "Password type: random or segment")
+	mode      := fs.String("type",      "random", "Password type: random, segment, or phrase")
 	length    := fs.Int("length",       16,       "Password length (random mode)")
 	count     := fs.Int("count",        1,        "Number of passwords to generate")
 	noUpper   := fs.Bool("no-upper",    false,    "Exclude uppercase letters (A-Z)")
@@ -393,8 +572,11 @@ func main() {
 	exclude   := fs.String("exclude",   "",       "Characters to exclude")
 	segments  := fs.Int("segments",     3,        "Number of segments (segment mode)")
 	segLen    := fs.Int("seg-length",   4,        "Characters per segment (segment mode)")
-	separator := fs.String("separator", "-",      "Segment separator: - or _ (segment mode)")
+	separator := fs.String("separator", "-",      "Separator: - or _ (segment/phrase mode)")
 	noCopy    := fs.Bool("no-copy",     false,    "Skip copying to clipboard")
+	words     := fs.Int("words",        4,        "Number of words (phrase mode)")
+	capitalize := fs.Bool("capitalize", true,     "Capitalize words (phrase mode)")
+	addNum    := fs.Bool("add-number",  true,     "Add random number at end (phrase mode)")
 
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "passgen — Cryptographically secure password generator")
@@ -410,6 +592,9 @@ func main() {
 		fmt.Fprintln(os.Stderr, `  passgen -type segment -segments 4 -seg-length 5`)
 		fmt.Fprintln(os.Stderr, `  passgen -type segment -separator _`)
 		fmt.Fprintln(os.Stderr, `  passgen -type segment -segments 3 -seg-length 6 -no-copy`)
+		fmt.Fprintln(os.Stderr, `  passgen -type phrase`)
+		fmt.Fprintln(os.Stderr, `  passgen -type phrase -words 5 -separator _`)
+		fmt.Fprintln(os.Stderr, `  passgen -type phrase -capitalize=false -add-number=false`)
 	}
 
 	fs.Parse(os.Args[1:])
@@ -470,8 +655,28 @@ func main() {
 			passwords = append(passwords, p)
 		}
 
+	case "phrase", "passphrase":
+		if *words < 1 {
+			fmt.Fprintln(os.Stderr, "error: -words must be >= 1")
+			os.Exit(1)
+		}
+		cfg := PassphraseConfig{
+			Words:      *words,
+			Separator:  *separator,
+			Capitalize: *capitalize,
+			AddNumber:  *addNum,
+		}
+		for i := 0; i < *count; i++ {
+			p, err := generatePassphrase(cfg)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error: %v\n", err)
+				os.Exit(1)
+			}
+			passwords = append(passwords, p)
+		}
+
 	default:
-		fmt.Fprintf(os.Stderr, "error: unknown type %q — use random or segment\n", *mode)
+		fmt.Fprintf(os.Stderr, "error: unknown type %q — use random, segment, or phrase\n", *mode)
 		os.Exit(1)
 	}
 
