@@ -3,370 +3,961 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>passgen — Secure Password Generator</title>
+  <title>passgen — Cryptographically Secure Password Generator</title>
+  <meta name="description" content="A fast, secure CLI password generator for macOS, Linux & Windows. Segmented, random, interactive — with auto clipboard copy." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #0d1117;
-      --surface:  #161b22;
-      --border:   #30363d;
-      --accent:   #58a6ff;
-      --accent2:  #3fb950;
-      --text:     #e6edf3;
-      --muted:    #8b949e;
-      --tag-bg:   #1f2937;
-      --radius:   10px;
+      --bg:        #0C0C0D;
+      --bg2:       #111113;
+      --surface:   #18181B;
+      --border:    #27272A;
+      --border2:   #3F3F46;
+      --amber:     #F59E0B;
+      --amber-dim: #92400E;
+      --green:     #22C55E;
+      --text:      #FAFAFA;
+      --muted:     #71717A;
+      --muted2:    #A1A1AA;
+      --radius:    8px;
     }
 
+    html { scroll-behavior: smooth; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: 'DM Sans', sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
+    /* Noise overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.025;
+      pointer-events: none;
+      z-index: 999;
+    }
 
-    /* ── Nav ── */
+    a { color: inherit; text-decoration: none; }
+
+    /* ── NAV ── */
     nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 1rem 2rem;
+      padding: 1.25rem 2.5rem;
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
-      background: rgba(13,17,23,0.85);
-      backdrop-filter: blur(10px);
+      background: rgba(12,12,13,0.9);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       z-index: 100;
     }
-    .nav-brand { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.3px; }
-    .nav-brand span { color: var(--accent); }
-    nav a { color: var(--muted); font-size: 0.9rem; margin-left: 1.5rem; }
-    nav a:hover { color: var(--text); text-decoration: none; }
 
-    /* ── Hero ── */
+    .nav-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.5rem;
+      letter-spacing: 2px;
+      color: var(--text);
+    }
+    .nav-logo span { color: var(--amber); }
+
+    .nav-links { display: flex; gap: 2rem; }
+    .nav-links a {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted2);
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ── HERO ── */
     .hero {
-      text-align: center;
-      padding: 5rem 1.5rem 4rem;
-      max-width: 760px;
-      margin: 0 auto;
-    }
-    .badge {
-      display: inline-block;
-      background: var(--tag-bg);
-      border: 1px solid var(--border);
-      color: var(--accent2);
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 0.25rem 0.75rem;
-      border-radius: 999px;
-      margin-bottom: 1.5rem;
-      letter-spacing: 0.5px;
-    }
-    .hero h1 {
-      font-size: clamp(2.4rem, 6vw, 3.8rem);
-      font-weight: 800;
-      letter-spacing: -1.5px;
-      line-height: 1.1;
-      margin-bottom: 1.25rem;
-    }
-    .hero h1 span { color: var(--accent); }
-    .hero p {
-      font-size: 1.15rem;
-      color: var(--muted);
-      max-width: 520px;
-      margin: 0 auto 2.5rem;
-    }
-
-    /* password preview */
-    .preview {
-      display: flex;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 2.5rem;
+      gap: 4rem;
+      padding: 6rem 2.5rem 4rem;
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
     }
-    .pw-badge {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.55rem 1.1rem;
-      font-family: "SF Mono", "Fira Code", monospace;
-      font-size: 0.95rem;
-      color: var(--accent2);
-      letter-spacing: 0.5px;
-    }
-    .pw-badge.seg { color: var(--accent); }
 
-    /* cta buttons */
-    .cta { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
-    .btn {
+    /* Ambient glow */
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 20%;
+      right: -10%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-left { position: relative; z-index: 1; }
+
+    .hero-tag {
       display: inline-flex;
       align-items: center;
       gap: 0.4rem;
-      padding: 0.65rem 1.4rem;
-      border-radius: var(--radius);
-      font-size: 0.95rem;
+      font-size: 0.78rem;
       font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--amber);
+      border: 1px solid var(--amber-dim);
+      background: rgba(245,158,11,0.06);
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      margin-bottom: 1.75rem;
+    }
+    .hero-tag::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: var(--amber);
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    .hero-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(4.5rem, 9vw, 7.5rem);
+      line-height: 0.9;
+      letter-spacing: 2px;
+      margin-bottom: 1.5rem;
+    }
+    .hero-title .line2 { color: var(--amber); display: block; }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--muted2);
+      font-weight: 300;
+      max-width: 380px;
+      margin-bottom: 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-btns { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.7rem 1.5rem;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
       cursor: pointer;
-      transition: opacity .15s, transform .15s;
+      transition: all 0.15s;
       border: none;
     }
-    .btn:hover { opacity: 0.88; transform: translateY(-1px); text-decoration: none; }
-    .btn-primary { background: var(--accent); color: #000; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-
-    /* ── Section ── */
-    section { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
-    section h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-      letter-spacing: -0.4px;
+    .btn-amber {
+      background: var(--amber);
+      color: #000;
     }
+    .btn-amber:hover { background: #FBBF24; transform: translateY(-1px); }
 
-    /* ── Features grid ── */
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; }
-    .card {
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--muted2);
+    }
+    .btn-ghost:hover { border-color: var(--muted2); color: var(--text); }
+
+    /* ── LIVE GENERATOR (right side) ── */
+    .generator-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.4rem;
-    }
-    .card-icon { font-size: 1.6rem; margin-bottom: 0.6rem; }
-    .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem; }
-    .card p { font-size: 0.875rem; color: var(--muted); }
-
-    /* ── Code blocks ── */
-    .code-block {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border-radius: 16px;
       overflow: hidden;
-      margin-bottom: 1rem;
+      position: relative;
+      z-index: 1;
     }
-    .code-label {
-      padding: 0.4rem 1rem;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--muted);
+
+    .gen-titlebar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.9rem 1.2rem;
       border-bottom: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-      text-transform: uppercase;
+      background: rgba(255,255,255,0.02);
+    }
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-red    { background: #FF5F57; }
+    .dot-yellow { background: #FEBC2E; }
+    .dot-green  { background: #28C840; }
+    .gen-titlebar-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-left: 0.5rem;
+    }
+
+    .gen-body { padding: 1.75rem; }
+
+    /* Mode tabs */
+    .gen-tabs {
+      display: flex;
+      gap: 0.25rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 3px;
+      margin-bottom: 1.5rem;
+    }
+    .gen-tab {
+      flex: 1;
+      text-align: center;
+      padding: 0.4rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 5px;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .gen-tab.active {
+      background: var(--surface);
+      color: var(--amber);
+      border: 1px solid var(--border);
+    }
+
+    /* Options */
+    .gen-options { margin-bottom: 1.25rem; }
+    .gen-option-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .gen-option-row:last-child { border-bottom: none; }
+    .gen-option-label {
+      font-size: 0.82rem;
+      color: var(--muted2);
+    }
+    .gen-option-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Toggle switch */
+    .toggle { position: relative; display: inline-block; width: 34px; height: 18px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: var(--border2);
+      border-radius: 999px;
+      transition: 0.15s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      height: 12px;
+      width: 12px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.15s;
+    }
+    .toggle input:checked + .toggle-slider { background: var(--amber); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    /* Number input */
+    .gen-num {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--text);
+      font-size: 0.82rem;
+      font-family: 'JetBrains Mono', monospace;
+      width: 52px;
+      padding: 0.2rem 0.4rem;
+      text-align: center;
+    }
+    .gen-num:focus { outline: none; border-color: var(--amber); }
+
+    /* Separator buttons */
+    .sep-btns { display: flex; gap: 0.25rem; }
+    .sep-btn {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      color: var(--muted2);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      padding: 0.2rem 0.6rem;
+      cursor: pointer;
+      transition: all 0.12s;
+    }
+    .sep-btn.active { border-color: var(--amber); color: var(--amber); background: rgba(245,158,11,0.08); }
+
+    /* Password display */
+    .pw-display {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      position: relative;
+    }
+    .pw-display:hover { border-color: var(--border2); }
+
+    .pw-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      color: var(--amber);
+      word-break: break-all;
+      line-height: 1.5;
       letter-spacing: 0.5px;
     }
-    pre {
-      padding: 1rem 1.2rem;
-      font-family: "SF Mono", "Fira Code", monospace;
-      font-size: 0.875rem;
-      line-height: 1.7;
-      overflow-x: auto;
-      color: var(--text);
+    .pw-hint {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.4rem;
     }
-    .c-comment { color: var(--muted); }
-    .c-cmd     { color: var(--accent2); }
-    .c-flag    { color: var(--accent); }
-    .c-out     { color: #d2a8ff; }
 
-    /* ── Downloads ── */
-    .dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+    .copy-flash {
+      position: absolute;
+      inset: 0;
+      background: rgba(34,197,94,0.08);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--green);
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+    }
+    .copy-flash.show { opacity: 1; }
+
+    .gen-actions { display: flex; gap: 0.5rem; }
+    .gen-btn {
+      flex: 1;
+      padding: 0.65rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: none;
+    }
+    .gen-btn-primary { background: var(--amber); color: #000; }
+    .gen-btn-primary:hover { background: #FBBF24; }
+    .gen-btn-secondary { background: var(--bg); border: 1px solid var(--border); color: var(--muted2); }
+    .gen-btn-secondary:hover { border-color: var(--border2); color: var(--text); }
+
+    /* ── STATS BAR ── */
+    .stats {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2);
+    }
+    .stats-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      padding: 0 2.5rem;
+    }
+    .stat {
+      flex: 1;
+      padding: 1.5rem 1rem;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      color: var(--amber);
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+    .stat-label { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; letter-spacing: 0.5px; }
+
+    /* ── SECTIONS ── */
+    .section { max-width: 1200px; margin: 0 auto; padding: 5rem 2.5rem; }
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--amber);
+      margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.5rem, 5vw, 3.5rem);
+      letter-spacing: 1px;
+      line-height: 1;
+      margin-bottom: 3rem;
+    }
+
+    /* ── FEATURES GRID ── */
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .feature-card {
+      background: var(--bg);
+      padding: 2rem;
+      transition: background 0.2s;
+    }
+    .feature-card:hover { background: var(--surface); }
+    .feature-icon {
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+    .feature-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .feature-desc { font-size: 0.875rem; color: var(--muted2); line-height: 1.6; }
+
+    /* ── USAGE / CODE ── */
+    .usage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+
+    .code-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .code-card-label {
+      padding: 0.65rem 1.2rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--amber);
+      border-bottom: 1px solid var(--border);
+      background: rgba(245,158,11,0.04);
+    }
+    pre {
+      padding: 1.25rem 1.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+    .c-cmd    { color: #FAFAFA; }
+    .c-flag   { color: var(--amber); }
+    .c-out    { color: #71717A; }
+    .c-value  { color: #86EFAC; }
+    .c-comment{ color: #52525B; }
+
+    /* ── INSTALL ── */
+    .install-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .install-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .install-card-head {
+      padding: 1rem 1.4rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    /* ── DOWNLOAD ── */
+    .dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 0.75rem; }
     .dl-card {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 1rem;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1rem 1.2rem;
-      transition: border-color .15s, transform .15s;
-      color: var(--text);
+      border-radius: 10px;
+      padding: 1.1rem 1.25rem;
+      transition: all 0.15s;
+      cursor: pointer;
     }
-    .dl-card:hover {
-      border-color: var(--accent);
-      transform: translateY(-2px);
-      text-decoration: none;
-    }
-    .dl-icon { font-size: 1.5rem; flex-shrink: 0; }
-    .dl-info .dl-name { font-weight: 600; font-size: 0.9rem; }
-    .dl-info .dl-sub  { font-size: 0.78rem; color: var(--muted); margin-top: 0.1rem; }
+    .dl-card:hover { border-color: var(--amber); transform: translateY(-2px); }
+    .dl-icon { font-size: 1.75rem; flex-shrink: 0; }
+    .dl-name { font-size: 0.9rem; font-weight: 600; }
+    .dl-sub  { font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem; font-family: 'JetBrains Mono', monospace; }
 
-    /* ── Footer ── */
+    /* ── FOOTER ── */
     footer {
-      text-align: center;
-      padding: 2rem 1rem;
       border-top: 1px solid var(--border);
-      font-size: 0.82rem;
-      color: var(--muted);
+      padding: 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
     }
-    footer a { color: var(--muted); }
-    footer a:hover { color: var(--text); }
+    .footer-logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+    }
+    .footer-logo span { color: var(--amber); }
+    .footer-copy { font-size: 0.8rem; color: var(--muted); }
+    .footer-links { display: flex; gap: 1.5rem; }
+    .footer-links a { font-size: 0.82rem; color: var(--muted); transition: color 0.15s; }
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; gap: 3rem; min-height: auto; padding: 5rem 1.5rem 3rem; }
+      .hero::after { display: none; }
+      .features-grid { grid-template-columns: 1fr 1fr; }
+      .usage-grid { grid-template-columns: 1fr; }
+      .install-grid { grid-template-columns: 1fr; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; }
+    }
+    @media (max-width: 600px) {
+      nav { padding: 1rem 1.25rem; }
+      .nav-links { gap: 1rem; }
+      .section { padding: 3rem 1.25rem; }
+      .stats-inner { flex-wrap: wrap; }
+      .stat { flex: 1 1 50%; border-right: none; border-bottom: 1px solid var(--border); }
+      .features-grid { grid-template-columns: 1fr; }
+      .dl-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Nav -->
+<!-- NAV -->
 <nav>
-  <div class="nav-brand">pass<span>gen</span></div>
-  <div>
-    <a href="#install">Install</a>
+  <div class="nav-logo">pass<span>gen</span></div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
     <a href="#usage">Usage</a>
-    <a href="#download">Download</a>
-    <a href="https://github.com/devthedeveloper/passgen" target="_blank">GitHub</a>
+    <a href="#install">Install</a>
+    <a href="https://github.com/devthedeveloper/passgen" target="_blank">GitHub ↗</a>
   </div>
 </nav>
 
-<!-- Hero -->
+<!-- HERO -->
 <div class="hero">
-  <div class="badge">v1.0.0 · Open Source</div>
-  <h1>Strong passwords,<br/><span>instantly.</span></h1>
-  <p>A cryptographically secure CLI password generator for macOS, Linux, and Windows. Interactive or scriptable.</p>
-
-  <div class="preview">
-    <div class="pw-badge">X7&amp;kP2!qL9mR@wZ#</div>
-    <div class="pw-badge seg">ab3kf-n9xQt-r7mWp-02yLs-Xc8vN</div>
+  <div class="hero-left">
+    <div class="hero-tag">v1.0.0 &nbsp;·&nbsp; Open Source &nbsp;·&nbsp; MIT</div>
+    <h1 class="hero-title">
+      STRONG<br/>
+      <span class="line2">PASS<br/>WORDS.</span>
+    </h1>
+    <p class="hero-sub">
+      A cryptographically secure CLI password generator. Runs on macOS, Linux & Windows. Interactive, scriptable, zero dependencies.
+    </p>
+    <div class="hero-btns">
+      <a class="btn btn-amber" href="#install">⬇&nbsp; Download</a>
+      <a class="btn btn-ghost" href="https://github.com/devthedeveloper/passgen" target="_blank">★&nbsp; GitHub</a>
+    </div>
   </div>
 
-  <div class="cta">
-    <a class="btn btn-primary" href="#download">⬇ Download</a>
-    <a class="btn btn-outline" href="https://github.com/devthedeveloper/passgen" target="_blank">★ GitHub</a>
+  <!-- LIVE GENERATOR -->
+  <div class="generator-card">
+    <div class="gen-titlebar">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-yellow"></div>
+      <div class="dot dot-green"></div>
+      <span class="gen-titlebar-label">passgen — live demo</span>
+    </div>
+    <div class="gen-body">
+      <div class="gen-tabs">
+        <div class="gen-tab active" onclick="switchTab('random',this)">Random</div>
+        <div class="gen-tab" onclick="switchTab('segment',this)">Segmented</div>
+      </div>
+
+      <!-- Random options -->
+      <div class="gen-options" id="opts-random">
+        <div class="gen-option-row">
+          <span class="gen-option-label">Length</span>
+          <div class="gen-option-ctrl">
+            <input class="gen-num" id="r-length" type="number" value="16" min="4" max="128" oninput="generate()" />
+          </div>
+        </div>
+        <div class="gen-option-row">
+          <span class="gen-option-label">Uppercase (A–Z)</span>
+          <div class="gen-option-ctrl">
+            <label class="toggle"><input type="checkbox" id="r-upper" checked onchange="generate()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="gen-option-row">
+          <span class="gen-option-label">Lowercase (a–z)</span>
+          <div class="gen-option-ctrl">
+            <label class="toggle"><input type="checkbox" id="r-lower" checked onchange="generate()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="gen-option-row">
+          <span class="gen-option-label">Digits (0–9)</span>
+          <div class="gen-option-ctrl">
+            <label class="toggle"><input type="checkbox" id="r-digits" checked onchange="generate()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="gen-option-row">
+          <span class="gen-option-label">Symbols (!@#$...)</span>
+          <div class="gen-option-ctrl">
+            <label class="toggle"><input type="checkbox" id="r-symbols" checked onchange="generate()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Segment options -->
+      <div class="gen-options" id="opts-segment" style="display:none">
+        <div class="gen-option-row">
+          <span class="gen-option-label">Segments</span>
+          <div class="gen-option-ctrl">
+            <input class="gen-num" id="s-segments" type="number" value="5" min="2" max="10" oninput="generate()" />
+          </div>
+        </div>
+        <div class="gen-option-row">
+          <span class="gen-option-label">Chars per segment</span>
+          <div class="gen-option-ctrl">
+            <input class="gen-num" id="s-seglen" type="number" value="5" min="2" max="12" oninput="generate()" />
+          </div>
+        </div>
+        <div class="gen-option-row">
+          <span class="gen-option-label">Separator</span>
+          <div class="gen-option-ctrl">
+            <div class="sep-btns">
+              <button class="sep-btn active" id="sep-dash" onclick="setSep('-')">-</button>
+              <button class="sep-btn" id="sep-under" onclick="setSep('_')">_</button>
+            </div>
+          </div>
+        </div>
+        <div class="gen-option-row">
+          <span class="gen-option-label">Uppercase (A–Z)</span>
+          <div class="gen-option-ctrl">
+            <label class="toggle"><input type="checkbox" id="s-upper" checked onchange="generate()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+        <div class="gen-option-row">
+          <span class="gen-option-label">Digits (0–9)</span>
+          <div class="gen-option-ctrl">
+            <label class="toggle"><input type="checkbox" id="s-digits" checked onchange="generate()"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="pw-display" id="pw-display" onclick="copyPassword()">
+        <div class="pw-text" id="pw-text">—</div>
+        <div class="pw-hint">Click to copy</div>
+        <div class="copy-flash" id="copy-flash">✓ Copied!</div>
+      </div>
+
+      <div class="gen-actions">
+        <button class="gen-btn gen-btn-primary" onclick="generate()">⟳ &nbsp;Generate</button>
+        <button class="gen-btn gen-btn-secondary" onclick="copyPassword()">⎘ &nbsp;Copy</button>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Features -->
-<section id="features">
-  <h2>Why passgen?</h2>
-  <div class="grid">
-    <div class="card">
-      <div class="card-icon">🔐</div>
-      <h3>Cryptographically secure</h3>
-      <p>Uses <code>crypto/rand</code> — no weak math/rand seeding. Every password is genuinely unpredictable.</p>
+<!-- STATS -->
+<div class="stats">
+  <div class="stats-inner">
+    <div class="stat"><div class="stat-val">crypto</div><div class="stat-label">rand source</div></div>
+    <div class="stat"><div class="stat-val">5</div><div class="stat-label">platforms</div></div>
+    <div class="stat"><div class="stat-val">0</div><div class="stat-label">dependencies</div></div>
+    <div class="stat"><div class="stat-val">MIT</div><div class="stat-label">license</div></div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">Why passgen</div>
+  <div class="section-title">EVERYTHING<br/>YOU NEED.</div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">🔐</span>
+      <div class="feature-title">Cryptographically secure</div>
+      <p class="feature-desc">Uses Go's <code>crypto/rand</code> backed by the OS CSPRNG. No weak math/rand seeding. Every character is genuinely unpredictable.</p>
     </div>
-    <div class="card">
-      <div class="card-icon">⚡</div>
-      <h3>Quick mode</h3>
-      <p>Run <code>passgen -</code> or <code>passgen _</code> for an instant segmented password. One keystroke.</p>
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <div class="feature-title">Quick mode</div>
+      <p class="feature-desc"><code>passgen -</code> or <code>passgen _</code> — one keystroke, instant segmented password. Copied to clipboard before you blink.</p>
     </div>
-    <div class="card">
-      <div class="card-icon">💬</div>
-      <h3>Interactive mode</h3>
-      <p>Run <code>passgen</code> alone and it walks you through every option step by step.</p>
+    <div class="feature-card">
+      <span class="feature-icon">💬</span>
+      <div class="feature-title">Interactive mode</div>
+      <p class="feature-desc">Run <code>passgen</code> with no flags and it walks you through every option step by step. No manual needed.</p>
     </div>
-    <div class="card">
-      <div class="card-icon">📋</div>
-      <h3>Auto clipboard</h3>
-      <p>Every generated password is instantly copied to your clipboard. No extra step needed.</p>
+    <div class="feature-card">
+      <span class="feature-icon">🧩</span>
+      <div class="feature-title">Segmented passwords</div>
+      <p class="feature-desc">Generate readable patterns like <code>ab12-cd34-ef56</code>. Configure number of segments, chars per segment, and separator.</p>
     </div>
-    <div class="card">
-      <div class="card-icon">🧩</div>
-      <h3>Segmented passwords</h3>
-      <p>Generate memorable patterns like <code>ab12-cd34-ef56</code>. Configurable segments, length, and separator.</p>
+    <div class="feature-card">
+      <span class="feature-icon">📋</span>
+      <div class="feature-title">Auto clipboard</div>
+      <p class="feature-desc">Every generated password is instantly copied to your clipboard. Supports pbcopy, xclip, xsel, wl-copy, and clip.</p>
     </div>
-    <div class="card">
-      <div class="card-icon">🌍</div>
-      <h3>Cross-platform</h3>
-      <p>Single binary for macOS (Apple Silicon &amp; Intel), Linux, and Windows. Zero dependencies.</p>
+    <div class="feature-card">
+      <span class="feature-icon">🌍</span>
+      <div class="feature-title">Cross-platform binary</div>
+      <p class="feature-desc">Single static binary. macOS (Apple Silicon + Intel), Linux (amd64 + arm64), Windows. Drop in PATH and go.</p>
     </div>
   </div>
 </section>
 
-<!-- Install / Usage -->
-<section id="usage">
-  <h2>Usage</h2>
-
-  <div class="code-block">
-    <div class="code-label">Quick mode</div>
-    <pre><span class="c-comment"># Segmented password with dash separator (5×5 chars)</span>
-<span class="c-cmd">passgen</span> <span class="c-flag">-</span>
+<!-- USAGE -->
+<section class="section" id="usage" style="padding-top:0">
+  <div class="section-label">Usage</div>
+  <div class="section-title">EVERY<br/>MODE.</div>
+  <div class="usage-grid">
+    <div class="code-card">
+      <div class="code-card-label">Quick mode</div>
+      <pre><span class="c-cmd">passgen</span> <span class="c-flag">-</span>
 <span class="c-out">nJ0aK-6V96F-zMtQs-o8kuh-sZty9</span>
+<span class="c-out">Copied to clipboard.</span>
 
-<span class="c-comment"># Same but with underscore separator</span>
 <span class="c-cmd">passgen</span> <span class="c-flag">_</span>
 <span class="c-out">mrwlN_XfZNo_awT1y_wDrPk_JY6X9</span></pre>
-  </div>
+    </div>
 
-  <div class="code-block">
-    <div class="code-label">Random passwords</div>
-    <pre><span class="c-cmd">passgen</span> <span class="c-flag">-length</span> 32
-<span class="c-cmd">passgen</span> <span class="c-flag">-count</span> 5
+    <div class="code-card">
+      <div class="code-card-label">Interactive mode</div>
+      <pre><span class="c-cmd">passgen</span>
+
+<span class="c-out">Password type:</span>
+<span class="c-out">  1  Random</span>
+<span class="c-out">  2  Segmented</span>
+<span class="c-out">Choose type [1]:</span> <span class="c-value">_</span>
+<span class="c-out">How many passwords [1]:</span> <span class="c-value">_</span></pre>
+    </div>
+
+    <div class="code-card">
+      <div class="code-card-label">Random passwords</div>
+      <pre><span class="c-cmd">passgen</span> <span class="c-flag">-length</span> <span class="c-value">32</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">-count</span> <span class="c-value">5</span>
 <span class="c-cmd">passgen</span> <span class="c-flag">-no-symbols</span>
-<span class="c-cmd">passgen</span> <span class="c-flag">-exclude</span> "0OIl1"          <span class="c-comment"># remove ambiguous chars</span></pre>
-  </div>
+<span class="c-cmd">passgen</span> <span class="c-flag">-exclude</span> <span class="c-value">"0OIl1"</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">-length</span> <span class="c-value">24</span> <span class="c-flag">-count</span> <span class="c-value">3</span></pre>
+    </div>
 
-  <div class="code-block">
-    <div class="code-label">Segmented passwords</div>
-    <pre><span class="c-cmd">passgen</span> <span class="c-flag">-type</span> segment
-<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> segment <span class="c-flag">-segments</span> 4 <span class="c-flag">-seg-length</span> 6
-<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> segment <span class="c-flag">-separator</span> _
-<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> segment <span class="c-flag">-no-upper</span>   <span class="c-comment"># lowercase + digits only</span></pre>
-  </div>
-
-  <div class="code-block">
-    <div class="code-label">Interactive mode</div>
-    <pre><span class="c-cmd">passgen</span>
-<span class="c-comment"># Walks you through all options step by step</span></pre>
+    <div class="code-card">
+      <div class="code-card-label">Segmented passwords</div>
+      <pre><span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">segment</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">segment</span> <span class="c-flag">-segments</span> <span class="c-value">4</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">segment</span> <span class="c-flag">-seg-length</span> <span class="c-value">6</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">segment</span> <span class="c-flag">-separator</span> <span class="c-value">_</span></pre>
+    </div>
   </div>
 </section>
 
-<!-- Download -->
-<section id="download">
-  <h2>Download v1.0.0</h2>
+<!-- INSTALL -->
+<section class="section" id="install" style="padding-top:0">
+  <div class="section-label">Install</div>
+  <div class="section-title">UP IN<br/>SECONDS.</div>
+
+  <div class="install-grid">
+    <div class="install-card">
+      <div class="install-card-head">⬇&nbsp; Download binary</div>
+      <pre><span class="c-comment"># macOS Apple Silicon</span>
+<span class="c-cmd">tar</span> xzf passgen-1.0.0-macos-arm64.tar.gz
+<span class="c-cmd">sudo mv</span> passgen /usr/local/bin/
+
+<span class="c-comment"># macOS Intel</span>
+<span class="c-cmd">tar</span> xzf passgen-1.0.0-macos-intel.tar.gz
+<span class="c-cmd">sudo mv</span> passgen /usr/local/bin/
+
+<span class="c-comment"># Linux</span>
+<span class="c-cmd">tar</span> xzf passgen-1.0.0-linux-amd64.tar.gz
+<span class="c-cmd">sudo mv</span> passgen /usr/local/bin/</pre>
+    </div>
+    <div class="install-card">
+      <div class="install-card-head">🔨&nbsp; Build from source</div>
+      <pre><span class="c-comment"># requires Go 1.21+</span>
+<span class="c-cmd">go install</span> \
+  github.com/devthedeveloper/passgen<span class="c-flag">@latest</span>
+
+<span class="c-comment"># add ~/go/bin to PATH</span>
+<span class="c-cmd">echo</span> <span class="c-value">'export PATH="$PATH:$HOME/go/bin"'</span> \
+  >> ~/.zshrc
+<span class="c-cmd">source</span> ~/.zshrc</pre>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-bottom:1.25rem">Download v1.0.0</div>
   <div class="dl-grid">
     <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-macos-arm64.tar.gz">
       <div class="dl-icon"></div>
-      <div class="dl-info">
-        <div class="dl-name">macOS — Apple Silicon</div>
-        <div class="dl-sub">M1 / M2 / M3 · .tar.gz</div>
-      </div>
+      <div><div class="dl-name">macOS Apple Silicon</div><div class="dl-sub">arm64 · .tar.gz</div></div>
     </a>
     <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-macos-intel.tar.gz">
       <div class="dl-icon"></div>
-      <div class="dl-info">
-        <div class="dl-name">macOS — Intel</div>
-        <div class="dl-sub">x86_64 · .tar.gz</div>
-      </div>
+      <div><div class="dl-name">macOS Intel</div><div class="dl-sub">amd64 · .tar.gz</div></div>
     </a>
     <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-linux-amd64.tar.gz">
       <div class="dl-icon">🐧</div>
-      <div class="dl-info">
-        <div class="dl-name">Linux — x64</div>
-        <div class="dl-sub">amd64 · .tar.gz</div>
-      </div>
+      <div><div class="dl-name">Linux x64</div><div class="dl-sub">amd64 · .tar.gz</div></div>
     </a>
     <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-linux-arm64.tar.gz">
       <div class="dl-icon">🐧</div>
-      <div class="dl-info">
-        <div class="dl-name">Linux — ARM64</div>
-        <div class="dl-sub">Raspberry Pi &amp; ARM · .tar.gz</div>
-      </div>
+      <div><div class="dl-name">Linux ARM64</div><div class="dl-sub">arm64 · .tar.gz</div></div>
     </a>
     <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-windows-amd64.zip">
       <div class="dl-icon">🪟</div>
-      <div class="dl-info">
-        <div class="dl-name">Windows — x64</div>
-        <div class="dl-sub">amd64 · .zip</div>
-      </div>
+      <div><div class="dl-name">Windows x64</div><div class="dl-sub">amd64 · .zip</div></div>
     </a>
-  </div>
-
-  <div style="margin-top:1.5rem;">
-    <div class="code-block">
-      <div class="code-label">Install on macOS / Linux</div>
-      <pre>tar xzf passgen-1.0.0-macos-arm64.tar.gz
-sudo mv passgen /usr/local/bin/
-passgen -</pre>
-    </div>
   </div>
 </section>
 
-<!-- Footer -->
+<!-- FOOTER -->
 <footer>
-  <p>Built with Go · <a href="https://github.com/devthedeveloper/passgen" target="_blank">github.com/devthedeveloper/passgen</a> · MIT License</p>
+  <div class="footer-logo">pass<span>gen</span></div>
+  <div class="footer-copy">MIT License · © 2025 devthedeveloper</div>
+  <div class="footer-links">
+    <a href="https://github.com/devthedeveloper/passgen" target="_blank">GitHub</a>
+    <a href="https://github.com/devthedeveloper/passgen/releases" target="_blank">Releases</a>
+    <a href="https://github.com/devthedeveloper/passgen/issues" target="_blank">Issues</a>
+  </div>
 </footer>
 
+<script>
+  // ── State ──
+  let mode = 'random';
+  let separator = '-';
+  let scrambleTimer = null;
+
+  // ── Secure random using Web Crypto API ──
+  function secureRandChar(charset) {
+    const arr = new Uint32Array(1);
+    crypto.getRandomValues(arr);
+    return charset[arr[0] % charset.length];
+  }
+
+  function buildCharset() {
+    if (mode === 'random') {
+      let cs = '';
+      if (document.getElementById('r-upper').checked)   cs += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      if (document.getElementById('r-lower').checked)   cs += 'abcdefghijklmnopqrstuvwxyz';
+      if (document.getElementById('r-digits').checked)  cs += '0123456789';
+      if (document.getElementById('r-symbols').checked) cs += '!@#$%^&*()-_=+[]{}|;:,.<>?';
+      return cs || 'abcdefghijklmnopqrstuvwxyz';
+    } else {
+      let cs = 'abcdefghijklmnopqrstuvwxyz';
+      if (document.getElementById('s-upper').checked)  cs += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      if (document.getElementById('s-digits').checked) cs += '0123456789';
+      return cs;
+    }
+  }
+
+  function makePassword() {
+    if (mode === 'random') {
+      const len = Math.min(128, Math.max(1, parseInt(document.getElementById('r-length').value) || 16));
+      const sets = [];
+      if (document.getElementById('r-upper').checked)   sets.push('ABCDEFGHIJKLMNOPQRSTUVWXYZ');
+      if (document.getElementById('r-lower').checked)   sets.push('abcdefghijklmnopqrstuvwxyz');
+      if (document.getElementById('r-digits').checked)  sets.push('0123456789');
+      if (document.getElementById('r-symbols').checked) sets.push('!@#$%^&*()-_=+[]{}|;:,.<>?');
+      if (!sets.length) return '(select a character set)';
+
+      const charset = sets.join('');
+      let chars = sets.map(s => secureRandChar(s));
+      while (chars.length < len) chars.push(secureRandChar(charset));
+
+      // Fisher-Yates shuffle
+      const arr = new Uint32Array(chars.length);
+      crypto.getRandomValues(arr);
+      for (let i = chars.length - 1; i > 0; i--) {
+        const j = arr[i] % (i + 1);
+        [chars[i], chars[j]] = [chars[j], chars[i]];
+      }
+      return chars.join('');
+    } else {
+      const segs   = Math.min(10, Math.max(2, parseInt(document.getElementById('s-segments').value) || 5));
+      const segLen = Math.min(12, Math.max(2, parseInt(document.getElementById('s-seglen').value) || 5));
+      const charset = buildCharset();
+      return Array.from({length: segs}, () =>
+        Array.from({length: segLen}, () => secureRandChar(charset)).join('')
+      ).join(separator);
+    }
+  }
+
+  // ── Scramble animation ──
+  const SCRAMBLE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$';
+  function scramble(el, finalText, duration = 500) {
+    if (scrambleTimer) clearInterval(scrambleTimer);
+    const totalFrames = 18;
+    let frame = 0;
+    scrambleTimer = setInterval(() => {
+      el.textContent = finalText.split('').map((ch, i) => {
+        if (ch === '-' || ch === '_') return ch;
+        if (frame / totalFrames > i / finalText.length) return ch;
+        return SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+      }).join('');
+      frame++;
+      if (frame > totalFrames) {
+        clearInterval(scrambleTimer);
+        el.textContent = finalText;
+      }
+    }, duration / totalFrames);
+  }
+
+  function generate() {
+    const pw = makePassword();
+    window._lastPw = pw;
+    scramble(document.getElementById('pw-text'), pw);
+  }
+
+  function copyPassword() {
+    const pw = window._lastPw;
+    if (!pw || pw.startsWith('(')) return;
+    navigator.clipboard.writeText(pw).then(() => {
+      const flash = document.getElementById('copy-flash');
+      flash.classList.add('show');
+      setTimeout(() => flash.classList.remove('show'), 1200);
+    });
+  }
+
+  function switchTab(newMode, el) {
+    mode = newMode;
+    document.querySelectorAll('.gen-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('opts-random').style.display  = newMode === 'random'  ? '' : 'none';
+    document.getElementById('opts-segment').style.display = newMode === 'segment' ? '' : 'none';
+    generate();
+  }
+
+  function setSep(sep) {
+    separator = sep;
+    document.getElementById('sep-dash').classList.toggle('active', sep === '-');
+    document.getElementById('sep-under').classList.toggle('active', sep === '_');
+    generate();
+  }
+
+  // Generate on load
+  window.addEventListener('DOMContentLoaded', generate);
+</script>
 </body>
 </html>
