@@ -719,7 +719,7 @@
     <div class="feature-card">
       <span class="feature-icon">🧠</span>
       <div class="feature-title">Passphrases</div>
-      <p class="feature-desc">Easy to remember, hard to crack. Generates <code>Tiger-Maple-Cloud-97</code> style passwords from 800+ words using <code>crypto/rand</code>.</p>
+      <p class="feature-desc">Easy to remember, hard to crack. Use your own words with <code>-include</code>, scramble letters with <code>-shuffle-chars</code>, or go fully random from 800+ words.</p>
     </div>
     <div class="feature-card">
       <span class="feature-icon">📋</span>
@@ -786,6 +786,18 @@
 <span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span> <span class="c-flag">-words</span> <span class="c-value">5</span>
 <span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span> <span class="c-flag">-separator</span> <span class="c-value">_</span>
 <span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span> <span class="c-flag">-capitalize=false</span></pre>
+    </div>
+
+    <div class="code-card">
+      <div class="code-card-label">Passphrases with your words</div>
+      <pre><span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span> <span class="c-flag">-include</span> <span class="c-value">"dhruv is great"</span>
+<span class="c-out">Dhruv-Is-Great-853</span>
+
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span> <span class="c-flag">-include</span> <span class="c-value">"sun moon"</span> <span class="c-flag">-words</span> <span class="c-value">4</span>
+<span class="c-out">Sun-Moon-Cage-Bolt-217</span>
+
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> <span class="c-value">phrase</span> <span class="c-flag">-include</span> <span class="c-value">"dhruv is great"</span> <span class="c-flag">-shuffle-chars</span>
+<span class="c-out">Ruvhd-Si-Gerta-78</span></pre>
     </div>
   </div>
 </section>
