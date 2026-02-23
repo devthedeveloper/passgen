@@ -322,6 +322,19 @@ func generatePassphrase(cfg PassphraseConfig) (string, error) {
 	return passphrase, nil
 }
 
+func splitWords(raw string) []string {
+	// Replace commas with spaces, then split on whitespace
+	raw = strings.ReplaceAll(raw, ",", " ")
+	var words []string
+	for _, w := range strings.Fields(raw) {
+		w = strings.TrimSpace(w)
+		if w != "" {
+			words = append(words, w)
+		}
+	}
+	return words
+}
+
 func shuffleStrings(s []string) error {
 	for i := len(s) - 1; i > 0; i-- {
 		j, err := randInt(i + 1)
@@ -505,15 +518,10 @@ func runInteractive() {
 		printDivider()
 		fmt.Println("  Passphrase options")
 		printDivider()
-		includeRaw := askDefault("  Your words (comma separated, blank for all random)", "")
+		includeRaw := askDefault("  Your words (space or comma separated, blank for all random)", "")
 		var include []string
 		if includeRaw != "" {
-			for _, w := range strings.Split(includeRaw, ",") {
-				w = strings.TrimSpace(w)
-				if w != "" {
-					include = append(include, w)
-				}
-			}
+			include = splitWords(includeRaw)
 		}
 		defWords := 4
 		if len(include) > defWords {
@@ -709,12 +717,7 @@ func main() {
 	case "phrase", "passphrase":
 		var inc []string
 		if *include != "" {
-			for _, w := range strings.Split(*include, ",") {
-				w = strings.TrimSpace(w)
-				if w != "" {
-					inc = append(inc, w)
-				}
-			}
+			inc = splitWords(*include)
 		}
 		if *words < len(inc) {
 			*words = len(inc)
