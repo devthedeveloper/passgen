@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>passgen — Secure Password Generator</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --surface:  #161b22;
+      --border:   #30363d;
+      --accent:   #58a6ff;
+      --accent2:  #3fb950;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --tag-bg:   #1f2937;
+      --radius:   10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── Nav ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: rgba(13,17,23,0.85);
+      backdrop-filter: blur(10px);
+      z-index: 100;
+    }
+    .nav-brand { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.3px; }
+    .nav-brand span { color: var(--accent); }
+    nav a { color: var(--muted); font-size: 0.9rem; margin-left: 1.5rem; }
+    nav a:hover { color: var(--text); text-decoration: none; }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      padding: 5rem 1.5rem 4rem;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .badge {
+      display: inline-block;
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      color: var(--accent2);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.5px;
+    }
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 1.25rem;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto 2.5rem;
+    }
+
+    /* password preview */
+    .preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+    }
+    .pw-badge {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.55rem 1.1rem;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.95rem;
+      color: var(--accent2);
+      letter-spacing: 0.5px;
+    }
+    .pw-badge.seg { color: var(--accent); }
+
+    /* cta buttons */
+    .cta { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.65rem 1.4rem;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, transform .15s;
+      border: none;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); text-decoration: none; }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+
+    /* ── Section ── */
+    section { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+    section h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1.5rem;
+      letter-spacing: -0.4px;
+    }
+
+    /* ── Features grid ── */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+    }
+    .card-icon { font-size: 1.6rem; margin-bottom: 0.6rem; }
+    .card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.35rem; }
+    .card p { font-size: 0.875rem; color: var(--muted); }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .code-label {
+      padding: 0.4rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.03);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    pre {
+      padding: 1rem 1.2rem;
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.875rem;
+      line-height: 1.7;
+      overflow-x: auto;
+      color: var(--text);
+    }
+    .c-comment { color: var(--muted); }
+    .c-cmd     { color: var(--accent2); }
+    .c-flag    { color: var(--accent); }
+    .c-out     { color: #d2a8ff; }
+
+    /* ── Downloads ── */
+    .dl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+    .dl-card {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      transition: border-color .15s, transform .15s;
+      color: var(--text);
+    }
+    .dl-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+    .dl-icon { font-size: 1.5rem; flex-shrink: 0; }
+    .dl-info .dl-name { font-weight: 600; font-size: 0.9rem; }
+    .dl-info .dl-sub  { font-size: 0.78rem; color: var(--muted); margin-top: 0.1rem; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 2rem 1rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-brand">pass<span>gen</span></div>
+  <div>
+    <a href="#install">Install</a>
+    <a href="#usage">Usage</a>
+    <a href="#download">Download</a>
+    <a href="https://github.com/devthedeveloper/passgen" target="_blank">GitHub</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="badge">v1.0.0 · Open Source</div>
+  <h1>Strong passwords,<br/><span>instantly.</span></h1>
+  <p>A cryptographically secure CLI password generator for macOS, Linux, and Windows. Interactive or scriptable.</p>
+
+  <div class="preview">
+    <div class="pw-badge">X7&amp;kP2!qL9mR@wZ#</div>
+    <div class="pw-badge seg">ab3kf-n9xQt-r7mWp-02yLs-Xc8vN</div>
+  </div>
+
+  <div class="cta">
+    <a class="btn btn-primary" href="#download">⬇ Download</a>
+    <a class="btn btn-outline" href="https://github.com/devthedeveloper/passgen" target="_blank">★ GitHub</a>
+  </div>
+</div>
+
+<!-- Features -->
+<section id="features">
+  <h2>Why passgen?</h2>
+  <div class="grid">
+    <div class="card">
+      <div class="card-icon">🔐</div>
+      <h3>Cryptographically secure</h3>
+      <p>Uses <code>crypto/rand</code> — no weak math/rand seeding. Every password is genuinely unpredictable.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h3>Quick mode</h3>
+      <p>Run <code>passgen -</code> or <code>passgen _</code> for an instant segmented password. One keystroke.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">💬</div>
+      <h3>Interactive mode</h3>
+      <p>Run <code>passgen</code> alone and it walks you through every option step by step.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <h3>Auto clipboard</h3>
+      <p>Every generated password is instantly copied to your clipboard. No extra step needed.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🧩</div>
+      <h3>Segmented passwords</h3>
+      <p>Generate memorable patterns like <code>ab12-cd34-ef56</code>. Configurable segments, length, and separator.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌍</div>
+      <h3>Cross-platform</h3>
+      <p>Single binary for macOS (Apple Silicon &amp; Intel), Linux, and Windows. Zero dependencies.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Install / Usage -->
+<section id="usage">
+  <h2>Usage</h2>
+
+  <div class="code-block">
+    <div class="code-label">Quick mode</div>
+    <pre><span class="c-comment"># Segmented password with dash separator (5×5 chars)</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">-</span>
+<span class="c-out">nJ0aK-6V96F-zMtQs-o8kuh-sZty9</span>
+
+<span class="c-comment"># Same but with underscore separator</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">_</span>
+<span class="c-out">mrwlN_XfZNo_awT1y_wDrPk_JY6X9</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-label">Random passwords</div>
+    <pre><span class="c-cmd">passgen</span> <span class="c-flag">-length</span> 32
+<span class="c-cmd">passgen</span> <span class="c-flag">-count</span> 5
+<span class="c-cmd">passgen</span> <span class="c-flag">-no-symbols</span>
+<span class="c-cmd">passgen</span> <span class="c-flag">-exclude</span> "0OIl1"          <span class="c-comment"># remove ambiguous chars</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-label">Segmented passwords</div>
+    <pre><span class="c-cmd">passgen</span> <span class="c-flag">-type</span> segment
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> segment <span class="c-flag">-segments</span> 4 <span class="c-flag">-seg-length</span> 6
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> segment <span class="c-flag">-separator</span> _
+<span class="c-cmd">passgen</span> <span class="c-flag">-type</span> segment <span class="c-flag">-no-upper</span>   <span class="c-comment"># lowercase + digits only</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-label">Interactive mode</div>
+    <pre><span class="c-cmd">passgen</span>
+<span class="c-comment"># Walks you through all options step by step</span></pre>
+  </div>
+</section>
+
+<!-- Download -->
+<section id="download">
+  <h2>Download v1.0.0</h2>
+  <div class="dl-grid">
+    <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-macos-arm64.tar.gz">
+      <div class="dl-icon"></div>
+      <div class="dl-info">
+        <div class="dl-name">macOS — Apple Silicon</div>
+        <div class="dl-sub">M1 / M2 / M3 · .tar.gz</div>
+      </div>
+    </a>
+    <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-macos-intel.tar.gz">
+      <div class="dl-icon"></div>
+      <div class="dl-info">
+        <div class="dl-name">macOS — Intel</div>
+        <div class="dl-sub">x86_64 · .tar.gz</div>
+      </div>
+    </a>
+    <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-linux-amd64.tar.gz">
+      <div class="dl-icon">🐧</div>
+      <div class="dl-info">
+        <div class="dl-name">Linux — x64</div>
+        <div class="dl-sub">amd64 · .tar.gz</div>
+      </div>
+    </a>
+    <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-linux-arm64.tar.gz">
+      <div class="dl-icon">🐧</div>
+      <div class="dl-info">
+        <div class="dl-name">Linux — ARM64</div>
+        <div class="dl-sub">Raspberry Pi &amp; ARM · .tar.gz</div>
+      </div>
+    </a>
+    <a class="dl-card" href="https://github.com/devthedeveloper/passgen/releases/download/v1.0.0/passgen-1.0.0-windows-amd64.zip">
+      <div class="dl-icon">🪟</div>
+      <div class="dl-info">
+        <div class="dl-name">Windows — x64</div>
+        <div class="dl-sub">amd64 · .zip</div>
+      </div>
+    </a>
+  </div>
+
+  <div style="margin-top:1.5rem;">
+    <div class="code-block">
+      <div class="code-label">Install on macOS / Linux</div>
+      <pre>tar xzf passgen-1.0.0-macos-arm64.tar.gz
+sudo mv passgen /usr/local/bin/
+passgen -</pre>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>Built with Go · <a href="https://github.com/devthedeveloper/passgen" target="_blank">github.com/devthedeveloper/passgen</a> · MIT License</p>
+</footer>
+
+</body>
+</html>
